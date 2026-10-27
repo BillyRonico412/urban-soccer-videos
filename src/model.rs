@@ -8,18 +8,18 @@ pub struct Action {
 
 pub async fn get_actions_from_match_url(match_url: &str) -> anyhow::Result<Vec<Action>> {
     let match_html_str = reqwest::get(match_url).await?.text().await?;
-    let match_html = scraper::Html::parse_document(&match_html_str);
-    let selector = scraper::Selector::parse(".videos-listint-item>a")?;
-    let elements = match_html.select(&selector);
-    let links = elements
-        .map(|el| el.attr("href"))
-        .collect::<Option<Vec<&str>>>()
-        .ok_or(anyhow::anyhow!(
-            "Error when get href attribute for match_html"
-        ))?;
-    let futures = links
-        .iter()
-        .map(|&link| async move { get_actions_from_action_url(link).await });
+    let links: Vec<String> = {
+        let match_html = scraper::Html::parse_document(&match_html_str);
+        let selector = scraper::Selector::parse(".videos-listint-item>a")?;
+        match_html
+            .select(&selector)
+            .map(|el| el.attr("href").map(str::to_string))
+            .collect::<Option<Vec<_>>>()
+            .ok_or(anyhow::anyhow!(
+                "Error when get href attribute for match_html"
+            ))?
+    };
+    let futures = links.iter().map(|link| get_actions_from_action_url(link));
     Ok(futures::future::try_join_all(futures).await?)
 }
 

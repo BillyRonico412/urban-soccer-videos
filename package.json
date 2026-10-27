@@ -1,0 +1,21 @@
+{
+  "name": "urban-soccer-videos",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "daisyui": "^5.7.50"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  },
+  "scripts": {
+    "css": "bun x @tailwindcss/cli -i assets/input.css -o assets/output.css",
+    "css:watch": "bun run css --watch"
+  }
+}
