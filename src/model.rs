@@ -4,7 +4,6 @@ use anyhow::Ok;
 pub struct Action {
     pub video_url_1: String,
     pub video_url_2: Option<String>,
-    pub time: String,
 }
 
 pub async fn get_actions_from_match_url(match_url: &str) -> anyhow::Result<Vec<Action>> {
@@ -32,7 +31,7 @@ async fn get_actions_from_action_url(action_url: &str) -> anyhow::Result<Action>
     let action_html = scraper::Html::parse_document(&action_html_str);
     let selector = scraper::Selector::parse("video")?;
     let videos = action_html.select(&selector);
-    let mut actions_iter = videos.map(|el| -> anyhow::Result<(String, String)> {
+    let mut actions_iter = videos.map(|el| {
         let selector = scraper::Selector::parse("source")?;
         let mut source = el.select(&selector);
         let src = source
@@ -40,36 +39,23 @@ async fn get_actions_from_action_url(action_url: &str) -> anyhow::Result<Action>
             .ok_or(anyhow::anyhow!("Error when get first source"))?
             .attr("src")
             .ok_or(anyhow::anyhow!("Error when get src from source"))?;
-
-        let selector = scraper::Selector::parse(".titre")?;
-        let mut titre = el.select(&selector);
-        let time = titre
-            .next()
-            .ok_or(anyhow::anyhow!("Error when get first title"))?
-            .text()
-            .next()
-            .ok_or(anyhow::anyhow!("Error when get title content"))?;
-        Ok((src.to_string(), time.to_string()))
+        Ok(src)
     });
     match (actions_iter.next(), actions_iter.next()) {
-        (Some(t1), None) => {
-            let (video_url_1, time_1) = t1?;
+        (Some(url), None) => {
+            let url = url?;
             Ok(Action {
-                video_url_1,
+                video_url_1: url.to_string(),
                 video_url_2: None,
-                time: time_1,
             })
         }
-        (Some(t1), Some(t2)) => {
-            let (video_url_1, time_1) = t1?;
-            let (video_url_2, time_2) = t2?;
-            if time_1 != time_2 {
-                panic!("Time is different");
-            }
+        (Some(url_1), Some(url_2)) => {
+            let url_1 = url_1?;
+            let url_2 = url_2?;
+
             Ok(Action {
-                video_url_1,
-                video_url_2: Some(video_url_2),
-                time: time_1,
+                video_url_1: url_1.to_string(),
+                video_url_2: Some(url_2.to_string()),
             })
         }
         _ => Err(anyhow::anyhow!("No action found")),
