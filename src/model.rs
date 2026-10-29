@@ -1,9 +1,11 @@
 use anyhow::Ok;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 #[derive(Debug)]
 pub struct Action {
     pub video_url_1: String,
     pub video_url_2: Option<String>,
+    pub datetime: NaiveDateTime,
 }
 
 pub async fn get_actions_from_match_url(match_url: &str) -> anyhow::Result<Vec<Action>> {
@@ -19,7 +21,9 @@ pub async fn get_actions_from_match_url(match_url: &str) -> anyhow::Result<Vec<A
                 "Error when get href attribute for match_html"
             ))?
     };
-    let futures = links.iter().map(|link| get_actions_from_action_url(link));
+    let futures = links.iter().filter_map(|link| {
+        (link.split("/").count() == 7).then_some(get_actions_from_action_url(link))
+    });
     Ok(futures::future::try_join_all(futures).await?)
 }
 
@@ -28,6 +32,19 @@ async fn get_actions_from_action_url(action_url: &str) -> anyhow::Result<Action>
         .await?
         .text()
         .await?;
+
+    let mut url_splited_iter = action_url.split("/");
+    let date = url_splited_iter
+        .nth(4)
+        .ok_or(anyhow::anyhow!("Date not found"))?;
+    let time = url_splited_iter.nth(1).ok_or_else(|| {
+        println!("action url failed: {}", action_url);
+        anyhow::anyhow!("Time not found")
+    })?;
+    let date = NaiveDate::parse_from_str(date, "%d-%m-%Y")?;
+    let time = NaiveTime::parse_from_str(time, "%H:%M:%S")?;
+    let datetime = NaiveDateTime::new(date, time);
+
     let action_html = scraper::Html::parse_document(&action_html_str);
     let selector = scraper::Selector::parse("video")?;
     let videos = action_html.select(&selector);
@@ -47,6 +64,7 @@ async fn get_actions_from_action_url(action_url: &str) -> anyhow::Result<Action>
             Ok(Action {
                 video_url_1: url.to_string(),
                 video_url_2: None,
+                datetime,
             })
         }
         (Some(url_1), Some(url_2)) => {
@@ -56,6 +74,7 @@ async fn get_actions_from_action_url(action_url: &str) -> anyhow::Result<Action>
             Ok(Action {
                 video_url_1: url_1.to_string(),
                 video_url_2: Some(url_2.to_string()),
+                datetime,
             })
         }
         _ => Err(anyhow::anyhow!("No action found")),
