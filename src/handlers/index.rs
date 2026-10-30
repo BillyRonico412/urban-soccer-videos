@@ -13,7 +13,7 @@ pub async fn handler(htmx: Htmx) -> Result<Markup, AppError> {
                 hx-target="#main"
                 hx-disable="find button"
             {
-                div class="flex flex-col items-center gap-6 w-full max-w-xl" {
+                div class="flex flex-col items-center gap-6 max-w-xl" {
                     h1 class="font-bold text-2xl" {
                         "Urban soccer videos"
                     }

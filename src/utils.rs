@@ -54,7 +54,7 @@ pub fn layout(children: Markup) -> Markup {
             }
             main id="main" class="flex-1 w-full overflow-hidden py-8" {
                 div class="w-full h-full overflow-y-auto" {
-                    div class="container mx-auto" {
+                    div class="container mx-auto h-full" {
                         (&children)
                     }
                 }
