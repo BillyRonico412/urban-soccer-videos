@@ -29,7 +29,7 @@ pub async fn handler(htmx: Htmx, Query(query): Query<ActionsQuery>) -> Result<Ma
         ));
     }
 
-    let data = format!("{{ index: {} }}", query.index);
+    let data = format!("{{ index: {}, video_state: '12' }}", query.index);
 
     Ok(page(
         htmx,
@@ -39,7 +39,8 @@ pub async fn handler(htmx: Htmx, Query(query): Query<ActionsQuery>) -> Result<Ma
                 x-data=(data)
             {
                 (actions_html(&actions))
-                (controller_html(actions.len()))
+                (video_state_html(&actions))
+                (prev_next_html(actions.len()))
                 (action_items_html(&query, &actions))
             }
         },
@@ -64,7 +65,10 @@ fn action_html(action: &Action, index: usize) -> Markup {
                 (&action.datetime.format("%d-%m-%Y %H:%M:%S"))
             }
             div class="flex items-center gap-8" {
-                div class="w-full aspect-video rounded-lg overflow-hidden" {
+                div
+                    class="w-full aspect-video rounded-lg overflow-hidden"
+                    x-show="video_state === '1' || video_state === '12'"
+                {
                     video
                         src=(action.video_url_1)
                         controls="true"
@@ -72,7 +76,10 @@ fn action_html(action: &Action, index: usize) -> Markup {
                         class="w-full h-full";
                 }
                 @if let Some(video_url_2) = &action.video_url_2 {
-                    div class="w-full aspect-video rounded-lg overflow-hidden" {
+                    div
+                        class="w-full aspect-video rounded-lg overflow-hidden"
+                        x-show="video_state === '2' || video_state === '12'"
+                    {
                         video src=(video_url_2) controls="true" class="w-full h-full";
                     }
                 }
@@ -81,7 +88,41 @@ fn action_html(action: &Action, index: usize) -> Markup {
     }
 }
 
-fn controller_html(action_len: usize) -> Markup {
+fn video_state_html(actions: &Vec<Action>) -> Markup {
+    let Some(first) = actions.get(0) else {
+        return html! {};
+    };
+    if first.video_url_2.is_none() {
+        return html! {};
+    }
+    html! {
+        div class="flex gap-4 justify-center items-center" {
+            button
+                class="btn"
+                x-bind:class="video_state === '1' && 'btn-primary'"
+                x-on:click="video_state = '1'"
+                {
+                    "Video 1"
+                }
+                button
+                class="btn"
+                x-bind:class="video_state === '12' && 'btn-primary'"
+                x-on:click="video_state = '12'"
+                {
+                    "Video 1 & Video 2"
+                }
+                button
+                class="btn"
+                x-bind:class="video_state === '2' && 'btn-primary'"
+                x-on:click="video_state = '2'"
+            {
+                "Video 2"
+            }
+        }
+    }
+}
+
+fn prev_next_html(action_len: usize) -> Markup {
     html! {
         div class="flex gap-4 justify-center items-center" {
             button
@@ -91,7 +132,7 @@ fn controller_html(action_len: usize) -> Markup {
                 {
                     "Précedent"
                 }
-                button
+            button
                 class="btn btn-primary"
                 x-bind:disabled=(format!("index === {}", action_len - 1))
                 x-on:click="index += 1"
