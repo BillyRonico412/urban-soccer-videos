@@ -1,0 +1,10 @@
+{
+  "steps": {
+    "build": {
+      "commands": [
+        "bun x css:prod",
+        "..."
+      ]
+    }
+  }
+}

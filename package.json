@@ -16,6 +16,7 @@
   },
   "scripts": {
     "css": "bun x @tailwindcss/cli -i assets/input.css -o assets/output.css",
+    "css:prod": "bun x @tailwindcss/cli -i assets/input.css -o assets/output.css --minify",
     "css:watch": "bun run css --watch"
   }
 }

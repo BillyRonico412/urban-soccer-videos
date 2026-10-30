@@ -14,7 +14,7 @@ impl IntoResponse for AppError {
         (
             StatusCode::INTERNAL_SERVER_ERROR, 
             layout(html! {
-                main class="h-screen w-screen flex items-center-safe justify-center-safe" {
+                main class="h-full w-full flex items-center-safe justify-center-safe" {
                     div role="alert" class="alert alert-error alert-soft alert-vertical" {
                         h3 class="font-bold" {
                             "Erreur lors du chargement de l'url. Soit l'url est incorect, soit le site est en panne !"
@@ -37,9 +37,28 @@ pub fn layout(children: Markup) -> Markup {
             title { "Urban Soccer Video" }
             link href="/output.css" rel="stylesheet";
             script src="/htmx.js" {};
+            script src="/alpine.js" {};
         }
-        body {
-            (&children)
+        body class="w-screen h-screen overflow-hidden flex flex-col" {
+            header class="navbar shadow-sm bg-base-200" {
+                div class="container mx-auto" {
+                    a 
+                        hx-get="/" 
+                        hx-push-url="true"
+                        hx-target="body"
+                        class="btn btn-ghost text-xl font-bold" 
+                    { 
+                        "Urban Soccer Videos"
+                    }
+                }
+            }
+            main id="main" class="flex-1 w-full overflow-hidden py-8" {
+                div class="w-full h-full overflow-y-auto" {
+                    div class="container mx-auto" {
+                        (&children)
+                    }
+                }
+            }
         }
     }
 }
